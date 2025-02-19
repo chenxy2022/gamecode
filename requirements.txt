@@ -1,0 +1,4 @@
+pygetwindow
+mss
+opencv-python
+pyautogui
