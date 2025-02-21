@@ -1,54 +1,49 @@
 import time
-import os
 from datetime import datetime
-import pygetwindow as gw
-import mss
 import cv2
 import numpy as np
 import pyautogui
 import winsound
+import os
+import pygetwindow as gw  # 直接导入 pygetwindow 模块
+import mss
 
 
-def find_and_activate_window(window_title: str):
+def find_and_activate_window(window_title: str) -> tuple or None:
     try:
-        # 查找窗口
-        window = gw.getWindowsWithTitle(window_title)[0]  # 查找包含指定标题的第一个窗口
+        window = gw.getWindowsWithTitle(window_title)[0]
         print(f"找到窗口: {window.title}")
-        # 激活窗口
         window.activate()
         x, y = window.midbottom
         return x, y - 10
-    except IndexError:
-        print(f'没有发现窗口{window_title}')
+    except (IndexError, Exception) as e:
+        print(f'没有发现窗口{window_title}，错误：{e}')
         return None
 
 
-def capture_screen():
+def capture_screen() -> np.ndarray:
     with mss.mss() as sct:
         monitor = sct.monitors[1]
         img = sct.grab(monitor)
-    img_np = np.array(img)
-    img_np = cv2.cvtColor(img_np, cv2.COLOR_BGRA2BGR)
-    return img_np
+    return cv2.cvtColor(np.array(img), cv2.COLOR_BGRA2BGR)
 
 
-def find_image_on_screen(image_path, threshold=0.8):
+def find_image_on_screen(image_path: str, threshold: float = 0.8) -> tuple or None:
     screen_image = capture_screen()
-    template = cv2.imread(image_path)
+    template = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
     if template is None:
-        print("无法读取模板图像，请检查路径。")
+        print(f"无法读取模板图像：{image_path}，请检查路径。")
         return None
     result = cv2.matchTemplate(screen_image, template, cv2.TM_CCOEFF_NORMED)
-    yloc, xloc = np.where(result >= threshold)
-    h, w = template.shape[:2]
-    if len(xloc) > 0 and len(yloc) > 0:
-        center_x = xloc[0] + w // 2
-        center_y = yloc[0] + h // 2
+    locations = np.where(result >= threshold)
+    if locations[0].size > 0:
+        h, w = template.shape[:2]
+        center_x, center_y = locations[1][0] + w // 2, locations[0][0] + h // 2
         return center_x, center_y
     return None
 
 
-def click_image_center(image_path):
+def click_image_center(image_path: str) -> str or None:
     position = find_image_on_screen(image_path)
     if position:
         original_pos = pyautogui.position()
@@ -60,15 +55,16 @@ def click_image_center(image_path):
 
 
 def main():
-    images = ['x.png', 'accept.png', 'gou.png', 'auto.png', 'end.png']
-    if 'end.png' in [click_image_center(img) for img in images]:
+    if shutdown_signal_image in (click_image_center(img) for img in images_to_find):
         # 播放系统提示音
         winsound.Beep(1000, 500)  # 1000赫兹，持续500毫秒
 
 
 if __name__ == '__main__':
-    title = "雷电模拟器"
-    mid_bottom = find_and_activate_window(title)
+    window_title = "雷电模拟器"
+    images_to_find = ['x.png', 'accept.png', 'gou.png', 'auto.png', 'end.png']
+    shutdown_signal_image = 'end.png'
+    mid_bottom = find_and_activate_window(window_title)
     if mid_bottom:
         while True:
             main()
