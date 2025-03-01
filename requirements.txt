@@ -2,3 +2,4 @@ pygetwindow
 mss
 opencv-python
 pyautogui
+numpy
