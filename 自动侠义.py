@@ -1,4 +1,4 @@
-import time
+import time, os
 import cv2
 import numpy as np
 import pyautogui
@@ -171,8 +171,8 @@ def main(caption_config, teammate_config, chapter_times):
 
 if __name__ == '__main__':
     chapter_times = {
-        # 1: 1,  # 章节1刷2次
-        12: 4  # 章节13刷7次
+        8: 4,  # 章节1刷2次
+        13: 7  # 章节13刷7次
     }
 
     caption_config = {
@@ -194,3 +194,5 @@ if __name__ == '__main__':
     }
 
     main(caption_config, teammate_config, chapter_times)
+    # 关机
+    os.system('shutdown /s /t 1')
