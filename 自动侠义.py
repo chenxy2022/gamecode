@@ -175,7 +175,7 @@ def main(caption_config, teammate_config, chapter_times):
 
 if __name__ == '__main__':
     chapter_times = {
-        # 11: 1,  # 章节1刷2次
+        # 8: 1,  # 章节1刷2次
         13: 5  # 章节13刷7次
     }
 
