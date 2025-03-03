@@ -27,7 +27,7 @@ def capture_screen() -> np.ndarray:
 
 def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=None, position='center') -> tuple or None:
     """在屏幕或指定窗口上查找图像"""
-    print(image_path)
+
     screen_image = capture_screen()
     x, y = 0, 0
     if search_win:
@@ -60,6 +60,7 @@ def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=Non
         top_x += x
         top_y += y
 
+        print(f'找到:{image_path}')
         return (center_x, center_y) if position == 'center' else (top_x, top_y)
 
     return None
@@ -126,7 +127,8 @@ def execute_game_actions(caption_config, teammate_config, target_pic):
         click_image(select, win)
 
     invite_player(caption_config['invite_image'], win)
-    teammate_select(teammate_config['window'], teammate_config['pics'])
+    teammate_ok = teammate_select(teammate_config['window'], teammate_config['pics'])
+    if not teammate_ok: raise # 如果队友没法找到对应图片，那么就出错中止程序
 
     pos = wait_for_image(caption_config['teammate_pic'], win)
     if pos:
@@ -135,10 +137,12 @@ def execute_game_actions(caption_config, teammate_config, target_pic):
 
 def teammate_select(win, pics):
     """队友点击对应的同意按钮"""
+    find = False
     win.activate()
     time.sleep(1)
     for pic in pics:
-        click_image(pic, win)
+        find = click_image(pic, win)
+    return find
 
 
 def main(caption_config, teammate_config, chapter_times):
@@ -171,8 +175,8 @@ def main(caption_config, teammate_config, chapter_times):
 
 if __name__ == '__main__':
     chapter_times = {
-        8: 4,  # 章节1刷2次
-        13: 7  # 章节13刷7次
+        # 11: 1,  # 章节1刷2次
+        13: 5  # 章节13刷7次
     }
 
     caption_config = {
@@ -188,11 +192,14 @@ if __name__ == '__main__':
 
     teammate_config = {
         'window_title': '雷电模拟器',
-        'pics': ['accept.png', 'gou.png'],
+        'pics': ['x.png', 'accept.png', 'gou.png'],
         'auto_image': caption_config['auto_image'],
         'end_image': caption_config['end_image'],
     }
 
-    main(caption_config, teammate_config, chapter_times)
-    # 关机
-    os.system('shutdown /s /t 1')
+    try:
+        main(caption_config, teammate_config, chapter_times)
+    finally:
+        # 关机
+        os.system('shutdown /s /t 30')
+        pass
