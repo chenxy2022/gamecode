@@ -28,12 +28,15 @@ def capture_screen() -> np.ndarray:
 def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=None, position='center') -> tuple or None:
     """在屏幕或指定窗口上查找图像"""
     print(image_path)
-    screen_image = capture_screen()
+
     x, y = 0, 0
     if search_win:
         search_win.activate()
+        screen_image = capture_screen()
         x, y, width, height = search_win.left, search_win.top, search_win.width, search_win.height
         screen_image = screen_image[y:y + height, x:x + width]
+    else:
+        screen_image = capture_screen()
 
     template = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
     if template is None:

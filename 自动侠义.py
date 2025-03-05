@@ -27,13 +27,14 @@ def capture_screen() -> np.ndarray:
 
 def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=None, position='center') -> tuple or None:
     """在屏幕或指定窗口上查找图像"""
-
-    screen_image = capture_screen()
     x, y = 0, 0
     if search_win:
         search_win.activate()
+        screen_image = capture_screen()
         x, y, width, height = search_win.left, search_win.top, search_win.width, search_win.height
         screen_image = screen_image[y:y + height, x:x + width]
+    else:
+        screen_image = capture_screen()
 
     template = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
     if template is None:
@@ -43,11 +44,17 @@ def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=Non
     # 确保模板图像的尺寸小于或等于屏幕截图的尺寸
     h, w = template.shape[:2]
     screen_h, screen_w = screen_image.shape[:2]
+    # 只有当模板图像的尺寸大于屏幕截图的尺寸时才进行调整
     if h > screen_h or w > screen_w:
-        template = cv2.resize(template, (min(w, screen_w), min(h, screen_h)))
+        new_h, new_w = min(h, screen_h), min(w, screen_w)
+        if new_h > 0 and new_w > 0:
+            template = cv2.resize(template, (new_w, new_h))
+        else:
+            print(f"模板图像 {image_path} 的尺寸无效，无法进行匹配。")
+            return None
 
-    # print(template.shape, screen_image.shape, search_win)
     result = cv2.matchTemplate(screen_image, template, cv2.TM_CCOEFF_NORMED)
+    print(threshold)
     locations = np.where(result >= threshold)
 
     if locations[0].size > 0:
@@ -70,13 +77,14 @@ def click_image(image_path, search_win=None, threshold=0.8, position='center'):
     """查找并点击图像"""
     if search_win:
         search_win.activate()
-        time.sleep(0.5)
+        # time.sleep(0.5)
     pos = find_image_on_screen(image_path, search_win=search_win, threshold=threshold, position=position)
     if pos:
         x, y = pos
         pyautogui.click(x, y)
         time.sleep(1)
         return True
+    print(f'not find:{image_path}')
     return False
 
 
@@ -128,7 +136,7 @@ def execute_game_actions(caption_config, teammate_config, target_pic):
 
     invite_player(caption_config['invite_image'], win)
     teammate_ok = teammate_select(teammate_config['window'], teammate_config['pics'])
-    if not teammate_ok: raise # 如果队友没法找到对应图片，那么就出错中止程序
+    if not teammate_ok: raise  # 如果队友没法找到对应图片，那么就出错中止程序
 
     pos = wait_for_image(caption_config['teammate_pic'], win)
     if pos:
@@ -175,8 +183,8 @@ def main(caption_config, teammate_config, chapter_times):
 
 if __name__ == '__main__':
     chapter_times = {
-        # 8: 1,  # 章节1刷2次
-        13: 5  # 章节13刷7次
+        # 8: 4,  # 章节1刷2次
+        12: 3  # 章节13刷7次
     }
 
     caption_config = {
@@ -201,5 +209,5 @@ if __name__ == '__main__':
         main(caption_config, teammate_config, chapter_times)
     finally:
         # 关机
-        os.system('shutdown /s /t 30')
+        # os.system('shutdown /s /t 30')
         pass
