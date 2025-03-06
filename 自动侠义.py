@@ -29,10 +29,13 @@ def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=Non
     """在屏幕或指定窗口上查找图像"""
     x, y = 0, 0
     if search_win:
-        search_win.activate()
+        if not search_win.isActive:
+            search_win.activate()
+            time.sleep(.5)
         screen_image = capture_screen()
         x, y, width, height = search_win.left, search_win.top, search_win.width, search_win.height
-        screen_image = screen_image[y:y + height, x:x + width]
+        screen_image = screen_image[max(0,y):y + height, max(0,x):x + width]
+        # print(search_win.title,(x, y, width, height))
     else:
         screen_image = capture_screen()
 
@@ -41,20 +44,7 @@ def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=Non
         print(f"无法读取模板图像：{image_path}，请检查路径。")
         return None
 
-    # 确保模板图像的尺寸小于或等于屏幕截图的尺寸
-    h, w = template.shape[:2]
-    screen_h, screen_w = screen_image.shape[:2]
-    # 只有当模板图像的尺寸大于屏幕截图的尺寸时才进行调整
-    if h > screen_h or w > screen_w:
-        new_h, new_w = min(h, screen_h), min(w, screen_w)
-        if new_h > 0 and new_w > 0:
-            template = cv2.resize(template, (new_w, new_h))
-        else:
-            print(f"模板图像 {image_path} 的尺寸无效，无法进行匹配。")
-            return None
-
     result = cv2.matchTemplate(screen_image, template, cv2.TM_CCOEFF_NORMED)
-    print(threshold)
     locations = np.where(result >= threshold)
 
     if locations[0].size > 0:
@@ -75,9 +65,9 @@ def find_image_on_screen(image_path: str, threshold: float = 0.8, search_win=Non
 
 def click_image(image_path, search_win=None, threshold=0.8, position='center'):
     """查找并点击图像"""
-    if search_win:
+    if not search_win.isActive:
         search_win.activate()
-        # time.sleep(0.5)
+        time.sleep(.5)
     pos = find_image_on_screen(image_path, search_win=search_win, threshold=threshold, position=position)
     if pos:
         x, y = pos
@@ -127,7 +117,7 @@ def execute_game_actions(caption_config, teammate_config, target_pic):
     win = caption_config['window']
     win.activate()
 
-    click_image(caption_config['source_pic'], win)
+    click_image(caption_config['source_pic'], win,threshold=.5)
     pyautogui.click(win.midtop[0], win.midleft[1])
     click_left_select(caption_config['source_pic'], target_pic, win)
 
@@ -175,7 +165,7 @@ def main(caption_config, teammate_config, chapter_times):
                 for win_config in [caption_config, teammate_config]:
                     click_for_image(win_config['end_image'], search_win=win_config['window'], threshold=.5)
 
-                while not find_image_on_screen(caption_config['source_pic'], search_win=caption_win):
+                while not find_image_on_screen(caption_config['challenge_image'], search_win=caption_win):
                     click_for_image(caption_config['end_image'], search_win=caption_win, threshold=.5)
                     time.sleep(1)
                 winsound.Beep(1000, 500)
@@ -183,8 +173,8 @@ def main(caption_config, teammate_config, chapter_times):
 
 if __name__ == '__main__':
     chapter_times = {
-        # 8: 4,  # 章节1刷2次
-        12: 3  # 章节13刷7次
+        8: 4,  # 章节1刷2次
+        12: 6  # 章节13刷7次
     }
 
     caption_config = {
@@ -194,7 +184,7 @@ if __name__ == '__main__':
         'challenge_image': 'challenge.png',
         'auto_image': 'auto.png',
         'end_image': 'z_end.png',
-        'source_pic': '22_jy.png',  # 队长默认的普通章节
+        'source_pic': '23_jy.png',  # 队长默认的普通章节
         'teammate_pic': 'teammate.png',  # 队友名字的截图
     }
 
@@ -210,4 +200,4 @@ if __name__ == '__main__':
     finally:
         # 关机
         # os.system('shutdown /s /t 30')
-        pass
+        print('end')
